@@ -8,6 +8,7 @@ def force_int(n):
     except ValueError:
         return force_int(input("Sorry, not a number. Try again:"))
 
+
 # Generates a random number, outside of excluded set. This should probably be a method in the Board class. To do.
 
 def excluderand(excluded):
@@ -15,6 +16,7 @@ def excluderand(excluded):
     while coordinates in excluded or coordinates is None:
         coordinates = randrange(0, my_board.board_size - 1)
     return coordinates
+
 
 # Board class - Generates, prints and populates the game board.
 
@@ -24,7 +26,7 @@ class Board(object):
         self.ship_count = 0
         self.board = []
         self.ships = []
-        self.occupied = {"x": [], "y": []} #Dictionary may not be best datatype for this - will review.
+        self.occupied = {"x": [], "y": []}  # Dictionary may not be best datatype for this - will review.
 
     # User can set board size - which is always a square. Minimum size is 5, needs a maximum.
 
@@ -37,14 +39,15 @@ class Board(object):
             self.board_size = 5
         for column in range(self.board_size):
             self.board.append(["O"] * self.board_size)
-    #The board is x arrays of x arrays. This prints those arrays in a square, minus all the extra array stuff.
+
+    # The board is x arrays of x arrays. This prints those arrays in a square, minus all the extra array stuff.
 
     def print_board(self):
         for row in self.board:
             print(" ".join(row))
 
-    #Populates the game board with user defined instances of the class Ship. There can be up to
-    #board_size // 2 ships - to keep from running out of spots to place them.
+    # Populates the game board with user defined instances of the class Ship. There can be up to
+    # board_size // 2 ships - to keep from running out of spots to place them.
 
     def populate(self):
         self.ships = []
@@ -63,13 +66,14 @@ class Board(object):
                     newship.hlocation()
                 self.ships.append(newship)
 
-    #If the player gets a hit, that location is updated with a ! (conjures explosion imagery for me). A miss is an X.
+    # If the player gets a hit, that location is updated with a ! (conjures explosion imagery for me). A miss is an X.
 
     def update_board(self, x, y, result):
         if result == "hit":
             self.board[x][y] = "!"
         else:
             self.board[x][y] = "X"
+
 
 # Battleships be here.
 
@@ -117,7 +121,9 @@ class Ship(object):
             self.y.append(self.y[0] + 1)
             my_board.occupied["y"].append(self.y[1])
 
-# Play class contains player name and stats for the current session and not much else at this time.
+
+# Play class contains player name and stats for the current session. Determines if player is a returning player, and
+# Calculates overall win percentage for stats board.
 
 class Player(object):
     def __init__(self, name):
@@ -125,6 +131,7 @@ class Player(object):
         self.wins = 0
         self.losses = 0
         self.tries = 0
+        self.returning_player = False
 
     # Prints stats for the current session.
 
@@ -134,6 +141,32 @@ class Player(object):
         print("Games Won: %s" % self.wins)
         print("Games Lost: %s" % self.losses)
         print("Win Percentage: %s" % (self.wins / self.tries))
+
+    # Determines if user has played before by name. Reassigns player name to match dictionary entry.
+
+    def is_returning_player(self):
+        if len(game_stats.player_dict) == 0:
+            return
+        else:
+            for key in game_stats.player_dict:
+                if key.lower() == current_player.name.lower():
+                    current_player.name = key
+                    self.returning_player = True
+
+    # Returns win percentage.
+
+    def calculate_win_percentage(self):
+        if self.returning_player is False:
+            if self.wins == 0:
+                return 0
+            else:
+                return self.tries / self.wins
+        else:
+            if self.wins == 0 and game_stats.player_dict[self.name] == 0:
+                return 0
+            else:
+                return float(game_stats.player_dict[self.name][2]) / float(game_stats.player_dict[self.name][0])
+
 
 # Stats from players to be saved and printed at the end of each game.
 
@@ -155,31 +188,36 @@ class Stats_Board(object):
         return (str(key) + ',' + self.player_dict[key][0] + ',' + self.player_dict[key][1]
                 + ',' + self.player_dict[key][2] + ',' + self.player_dict[key][3] + '\n')
 
-    # Populates a dictionary with the contents of stats save file.
+    # Attempts to populate dictionary from stats fle, if it doesn't exist, it creates one.
 
     def create_stats_dict(self):
         stats = []
-        with open("stats.txt", "r") as statsfile:
-            for line in statsfile.readlines():
-                line = line.rstrip('\n')
-                stats = line.split(',')
-                self.player_dict[stats[0]] = stats[1:]
+        try:
+            with open("stats.txt", "r") as statsfile:
+                for line in statsfile.readlines():
+                    line = line.rstrip('\n')
+                    stats = line.split(',')
+                    self.player_dict[stats[0]] = stats[1:]
+        except:
+            with open("stats.txt", "w") as statsfile:
+                return
+        print(self.player_dict)
 
-    # Checks to see if the current player already has an entry, if so, updates that entry.
-    # If not, creates a new one.
+    # If player is a returning player, stats are updated. If not, a new entry is made.
 
     def update_stats_dict(self):
-        for key in self.player_dict:
-            if current_player.name == key:
-                self.player_dict[key][0] = str(int(self.player_dict[key][0]) + current_player.tries)
-                self.player_dict[key][1] = str(int(self.player_dict[key][1]) + current_player.losses)
-                self.player_dict[key][2] = str(int(self.player_dict[key][2]) + current_player.wins)
-                self.player_dict[key][3] = str(float(self.player_dict[key][2]) / float(self.player_dict[key][0]))
-                return
+        if current_player.returning_player is True:
+            self.player_dict[current_player.name][0] = str(
+                int(self.player_dict[current_player.name][0]) + current_player.tries)
+            self.player_dict[current_player.name][1] = str(
+                int(self.player_dict[current_player.name][1]) + current_player.losses)
+            self.player_dict[current_player.name][2] = str(
+                int(self.player_dict[current_player.name][2]) + current_player.wins)
+            self.player_dict[current_player.name][3] = str(current_player.calculate_win_percentage())
         else:
             self.player_dict[current_player.name] = [str(current_player.tries), str(current_player.losses),
                                                      str(current_player.wins),
-                                                     str(current_player.tries / current_player.wins)]
+                                                     str(current_player.calculate_win_percentage())]
 
 
 # Game class - handles all of the gaming interaction.
@@ -206,10 +244,10 @@ class Game(object):
             if self.turns > 0:
                 print("%s turns left" % self.turns)
                 my_board.print_board()
-                guess_x = force_int(input("Guess Row: "))
-                guess_y = force_int(input("Guess Column: "))
-                if guess_x > my_board.board_size or guess_y > my_board.board_size: # Some bug here - this doesn't always
-                    print("That's not even on the map!")                           # Work. To do: fix.
+                guess_x = force_int(input("Guess Row: ")) - 1
+                guess_y = force_int(input("Guess Column: ")) - 1
+                if guess_x > my_board.board_size - 1 or guess_y > my_board.board_size - 1:
+                    print("That's not even on the map!")  # Work. To do: fix.
                     self.turns -= 1
                 elif my_board.board[guess_x][guess_y] is "X" or my_board.board[guess_x][guess_y] is "!":
                     print("You already guessed there!")
@@ -267,11 +305,7 @@ my_game = Game()
 game_stats = Stats_Board()
 current_player = Player(input("What's your name, player?"))
 game_stats.create_stats_dict()
+current_player.is_returning_player()
 my_game.play()
-
-
-
-
-
 
 
