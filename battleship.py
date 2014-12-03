@@ -52,8 +52,8 @@ class Board(object):
     def populate(self):
         self.ships = []
         self.ship_count = force_int(input("How many ships would you like?"))
-        while self.ship_count > self.board_size // 2:
-            print("That's a few too many for your board size, try between 1 and %s" % (self.board_size // 2))
+        while self.ship_count > self.board_size // 2 or self.ship_count is 0:
+            print("That's to few or too many for your board size, try between 1 and %s" % (self.board_size // 2))
             self.ship_count = force_int(input("How many ships would you like?"))
             continue
         else:
@@ -136,7 +136,7 @@ class Player(object):
     # Prints stats for the current session.
 
     def print_stats(self):
-        print("Stats for %s" % self.name)
+        print("\nCurrent session stats for %s:" % self.name)
         print("Games Played: %s" % self.tries)
         print("Games Won: %s" % self.wins)
         print("Games Lost: %s" % self.losses)
@@ -219,6 +219,16 @@ class Stats_Board(object):
                                                      str(current_player.wins),
                                                      str(current_player.calculate_win_percentage())]
 
+    # prints leader board weighted by win percentage
+
+    def print_leaderboard(self):
+        leaderboard = sorted(self.player_dict.items(), key=lambda x: x[1][3], reverse=True)
+        print(u'\n**LEADERBOARD**\n{0:<12s}{1:<6s}{2:<8s}{3:<6s}{4:s}'.format("Player", "Tries", "Losses", "Wins", "Win Percentage"))
+        for each in leaderboard:
+            print(u'{0:<12s}{1:<6s}{2:<8s}{3:<6s}{4:>0.04s}'.format(each[0], each[1][0], each[1][1], each[1][2],
+                                                                    each[1][3]))
+
+
 
 # Game class - handles all of the gaming interaction.
 
@@ -293,7 +303,7 @@ class Game(object):
         elif answer.lower() == "n":
             current_player.print_stats()
             game_stats.update_stats_dict()
-            print(game_stats.player_dict)
+            game_stats.print_leaderboard()
             game_stats.write_stats()
         else:
             print("Sorry, please enter 'y' for yes or 'n' for no")
@@ -307,5 +317,10 @@ current_player = Player(input("What's your name, player?"))
 game_stats.create_stats_dict()
 current_player.is_returning_player()
 my_game.play()
+
+
+
+
+
 
 
