@@ -201,7 +201,6 @@ class Stats_Board(object):
         except:
             with open("stats.txt", "w") as statsfile:
                 return
-        print(self.player_dict)
 
     # If player is a returning player, stats are updated. If not, a new entry is made.
 
